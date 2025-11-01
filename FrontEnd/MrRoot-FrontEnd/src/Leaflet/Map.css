@@ -1,0 +1,12 @@
+.leaflet-container {
+  margin-top: 10px;
+  height: 500px;
+  width: 200vh;
+  margin-left: 25px;
+  margin-right: 25px;
+  align-content: center;
+}
+
+.map-wrapper {
+  position: relative;
+}
