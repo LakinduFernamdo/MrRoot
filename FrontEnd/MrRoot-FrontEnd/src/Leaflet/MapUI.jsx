@@ -7,45 +7,51 @@ import L from "leaflet";
 import markerImg from "../assets/Marker.png";
 import useGeolocate from "./useGeolocate";
 import { harversineDistance } from "../Utils/distance";
+import { reverseGeocode } from "../Utils/geocode";
 
 function AddMarkerOnClick({ placing, setPlacing, setMarkers }) {
   useMapEvents({
     click(e) {
       if (placing) {
-        setMarkers((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            position: e.latlng
-          }
-        ]);
-        setPlacing(false);
+        (async () => {
+          const name = await reverseGeocode(e.latlng.lat, e.latlng.lng);
+
+          setMarkers((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              position: e.latlng,
+              name,
+            },
+          ]);
+
+          setPlacing(false);
+        })();
       }
-    }
+    },
   });
   return null;
 }
 
-// Helper to fly map
 function FlyToLocation({ position }) {
   const map = useMap();
-
   if (position) {
     map.flyTo([position.lat, position.lng], 14, { animate: true });
   }
-
   return null;
 }
 
 function MapUI() {
   const [center] = useState([6.9271, 79.8612]);
-  const zoomLevel = 9;
 
+  const zoomLevel = 9;
   const location = useGeolocate();
+
   const [placing, setPlacing] = useState(false);
   const [markers, setMarkers] = useState([]);
-  const [distanceResults, setDistanceResults] = useState({});
 
+  //  store ALL results here
+  const [distanceResults, setDistanceResults] = useState([]);
 
   const markerIcon = new L.Icon({
     iconUrl: markerImg,
@@ -58,6 +64,7 @@ function MapUI() {
     setMarkers((prev) => prev.filter((m) => m.id !== id));
   };
 
+  //  Distances *from me* shown in UI now
   const calculateDistanceFromMe = () => {
     if (!location.loaded || location.error) return;
 
@@ -67,40 +74,41 @@ function MapUI() {
     };
 
     const results = markers.map((m) => ({
-      from: "Me",
-      to: m.id,
+      from: "You",
+      to: m.name,
       distance_km: harversineDistance(myPos, m.position).toFixed(2),
     }));
 
-    console.log("Distances From Me:", results);
-
+    setDistanceResults(results); //  update UI
   };
 
+  //  pairwise unique (A→B only)
   const calculateMarkerToMarkerDistance = () => {
     const results = [];
 
     for (let i = 0; i < markers.length; i++) {
       for (let j = i + 1; j < markers.length; j++) {
         results.push({
-          from: markers[i].id,
-          to: markers[j].id,
+          from: markers[i].name,
+          to: markers[j].name,
           distance_km: harversineDistance(markers[i].position, markers[j].position).toFixed(2),
         });
       }
     }
 
-    console.log("Marker-to-Marker:", results);
+    setDistanceResults(results);
   };
 
+  //  All full combinations (A→B, B→A, etc.)
   const calculateAllPairDistancesForEach = () => {
-    const results = {};
+    const results = [];
 
     markers.forEach((m1) => {
-      results[m1.id] = [];
       markers.forEach((m2) => {
         if (m1.id !== m2.id) {
-          results[m1.id].push({
-            to: m2.id,
+          results.push({
+            from: m1.name,
+            to: m2.name,
             distance_km: harversineDistance(m1.position, m2.position).toFixed(2),
           });
         }
@@ -131,6 +139,7 @@ function MapUI() {
             >
               <Popup>You are here!</Popup>
             </Marker>
+
             <FlyToLocation
               position={{
                 lat: location.coordinates.lat,
@@ -147,17 +156,22 @@ function MapUI() {
             position={m.position}
             draggable={true}
             eventHandlers={{
-              dragend: (e) => {
+              dragend: async (e) => {
                 const { lat, lng } = e.target.getLatLng();
+                const name = await reverseGeocode(lat, lng);
+
                 setMarkers((prev) =>
                   prev.map((marker) =>
-                    marker.id === m.id ? { ...marker, position: { lat, lng } } : marker
+                    marker.id === m.id
+                      ? { ...marker, position: { lat, lng }, name }
+                      : marker
                   )
                 );
               },
             }}
           >
             <Popup>
+              <strong>{m.name}</strong> <br />
               Lat: {m.position.lat.toFixed(4)} <br />
               Lng: {m.position.lng.toFixed(4)} <br />
               <button onClick={() => removeMarker(m.id)}>Remove</button>
@@ -165,15 +179,7 @@ function MapUI() {
           </Marker>
         ))}
 
-        <AddMarkerOnClick
-          placing={placing}
-          setPlacing={setPlacing}
-          setMarkers={setMarkers}
-        />
-
-
-
-
+        <AddMarkerOnClick placing={placing} setPlacing={setPlacing} setMarkers={setMarkers} />
       </MapContainer>
 
       <div style={{ marginTop: "10px" }}>
@@ -183,25 +189,20 @@ function MapUI() {
         <button onClick={calculateAllPairDistancesForEach}>All Pairs</button>
       </div>
 
-
+      {/*  Unified output area */}
       <div className="distance-output">
         <h3>Distance Results</h3>
-        {Object.keys(distanceResults).length === 0 && <p>No distances calculated</p>}
 
-        {Object.entries(distanceResults).map(([from, list]) => (
-          <div key={from} style={{ marginBottom: "10px" }}>
-            <strong>From {from}:</strong>
-            <ul>
-              {list.map((item) => (
-                <li key={item.to}>
-                  To {item.to}: {item.distance_km} km
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        {distanceResults.length === 0 && <p>No distances calculated</p>}
+
+        <ul>
+          {distanceResults.map((item, index) => (
+            <li key={index}>
+              <strong>{item.from}</strong> → {item.to}: {item.distance_km} km
+            </li>
+          ))}
+        </ul>
       </div>
-
     </div>
   );
 }
