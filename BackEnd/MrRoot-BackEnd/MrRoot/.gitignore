@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+.mvn
+mvnw.cmd
+HELP.md
+./target
+./src/test
+.gitattributes
+
