@@ -1,0 +1,5 @@
+MrRoot/target
+MrRoot/.gitattributes
+MrRoot/.gitignore
+MrRoot/src/test
+MrRoot/.mvn
