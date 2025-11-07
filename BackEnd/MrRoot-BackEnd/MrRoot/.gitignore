@@ -29,12 +29,13 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+
 .mvn
 mvnw.cmd
+mvnw
 HELP.md
-./target
-./src/test
+../.idea
+src/test
 .gitattributes
+target
 

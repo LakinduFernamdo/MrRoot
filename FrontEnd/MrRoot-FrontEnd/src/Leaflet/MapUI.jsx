@@ -187,6 +187,7 @@ function MapUI() {
         <button onClick={calculateDistanceFromMe}>Distances From Me</button>
         <button onClick={calculateMarkerToMarkerDistance}>Marker Distances</button>
         <button onClick={calculateAllPairDistancesForEach}>All Pairs</button>
+        <button onClick={sendAPI}>Give shortest path</button>
       </div>
 
       {/*  Unified output area */}
