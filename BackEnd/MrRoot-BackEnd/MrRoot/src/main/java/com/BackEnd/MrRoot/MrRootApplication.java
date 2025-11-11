@@ -8,7 +8,7 @@ public class MrRootApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(MrRootApplication.class, args);
-		System.out.println("Hi Lakindu Project running successfully !");
+		System.out.println("Hi Lakindu, BackEnd running successfully !");
 	}
 
 }

@@ -13,10 +13,26 @@ public class DistanceRequest {
     private List<String> nodes;           //this store [colombo,Panadura,Hirana]
     private List<DistancePair> distances;  //This store [from,to,weight] data
 
+
+    public List<String> getNodes() {
+        return nodes;
+    }
+
+    public void setNodes(List<String> nodes) {
+        this.nodes = nodes;
+    }
+
+    public List<DistancePair> getDistances() {
+        return distances;
+    }
+
+    public void setDistances(List<DistancePair> distances) {
+        this.distances = distances;
+    }
 }
 
 /*
-The basic purpose of this class is getting front payload wich looks like this
+The basic purpose of this class is getting front payload which looks like this
 {
   "nodes": ["A","B","C","D"],
   "distances": [

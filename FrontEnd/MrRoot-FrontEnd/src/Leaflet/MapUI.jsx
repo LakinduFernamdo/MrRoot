@@ -8,6 +8,8 @@ import markerImg from "../assets/Marker.png";
 import useGeolocate from "./useGeolocate";
 import { harversineDistance } from "../Utils/distance";
 import { reverseGeocode } from "../Utils/geocode";
+import axios from "axios";
+
 
 function AddMarkerOnClick({ placing, setPlacing, setMarkers }) {
   useMapEvents({
@@ -118,6 +120,85 @@ function MapUI() {
     setDistanceResults(results);
   };
 
+
+  //send shortest path to BackEnd through API
+const sendShortestPathRequest = async () => {
+  if (!location.loaded || location.error) {
+    alert("Location not available ! Turn on your location");
+    return;
+  }
+
+  const startNode = "You";
+
+  // Build node list
+  const nodes = ["You", ...markers.map(m => m.name)];
+
+  // Build pairwise distances
+  const distances = [];
+
+  // From me → markers
+  markers.forEach(m => {
+    distances.push({
+      from: "You",
+      to: m.name,
+      weight: parseFloat(
+        harversineDistance(
+          { lat: location.coordinates.lat, lng: location.coordinates.lng },
+          m.position
+        ).toFixed(2)
+      ),
+    });
+  });
+
+  // Marker ↔ marker (bi-directional)
+  for (let i = 0; i < markers.length; i++) {
+    for (let j = i + 1; j < markers.length; j++) {
+      const dist = parseFloat(
+        harversineDistance(markers[i].position, markers[j].position).toFixed(2)
+      );
+
+      distances.push({
+        from: markers[i].name,
+        to: markers[j].name,
+        weight: dist,
+      });
+
+      distances.push({
+        from: markers[j].name,
+        to: markers[i].name,
+        weight: dist,
+      });
+    }
+  }
+
+  // Payload matches backend DTO!
+  const payload = { nodes, distances };
+
+  try {
+    const response = await axios.post(
+      "http://localhost:8080/api/distance/graph?start=" + startNode,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: false,
+      }
+    );
+
+    console.log("Shortest path from API:", response.data.shortest);
+    setDistanceResults(response.data.shortest);
+
+  } catch (err) {
+    alert(err);
+  }
+};
+
+
+
+
+
+
   return (
     <div className="map-wrapper">
       <MapContainer
@@ -137,7 +218,7 @@ function MapUI() {
               icon={markerIcon}
               position={[location.coordinates.lat, location.coordinates.lng]}
             >
-              <Popup>You are here!</Popup>
+              <Popup>You are here now !</Popup>
             </Marker>
 
             <FlyToLocation
@@ -187,7 +268,7 @@ function MapUI() {
         <button onClick={calculateDistanceFromMe}>Distances From Me</button>
         <button onClick={calculateMarkerToMarkerDistance}>Marker Distances</button>
         <button onClick={calculateAllPairDistancesForEach}>All Pairs</button>
-        <button onClick={sendAPI}>Give shortest path</button>
+        <button onClick={sendShortestPathRequest} >Give shortest path</button>
       </div>
 
       {/*  Unified output area */}
@@ -196,13 +277,22 @@ function MapUI() {
 
         {distanceResults.length === 0 && <p>No distances calculated</p>}
 
-        <ul>
-          {distanceResults.map((item, index) => (
-            <li key={index}>
-              <strong>{item.from}</strong> → {item.to}: {item.distance_km} km
-            </li>
-          ))}
-        </ul>
+        {typeof distanceResults === "object" && !Array.isArray(distanceResults) ? (
+          <ul>
+            {Object.entries(distanceResults).map(([node, dist]) => (
+              <li key={node}>{node}: {dist} km</li>
+            ))}
+          </ul>
+        ) : (
+          <ul>
+            {distanceResults.map((item, index) => (
+              <li key={index}>
+                {item.from} → {item.to}: {item.distance_km} km
+              </li>
+            ))}
+          </ul>
+        )}
+
       </div>
     </div>
   );
