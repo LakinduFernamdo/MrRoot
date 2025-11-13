@@ -11,7 +11,7 @@ public class DistanceRequest {
 
 
     private List<String> nodes;           //this store [colombo,Panadura,Hirana]
-    private List<DistancePair> distances;  //This store [from,to,weight] data
+    private List<DistancePair> distances;  //This store [{from,to,weight}] data
 
 
     public List<String> getNodes() {

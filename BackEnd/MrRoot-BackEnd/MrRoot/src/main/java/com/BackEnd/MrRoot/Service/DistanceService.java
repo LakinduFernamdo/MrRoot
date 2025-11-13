@@ -17,10 +17,10 @@ public class DistanceService {
 
         // Add edges (double weights)
         req.getDistances().forEach(p -> {
-            int from = req.getNodes().indexOf(p.from);
-            int to = req.getNodes().indexOf(p.to);
+            int from = req.getNodes().indexOf(p.getFrom());
+            int to = req.getNodes().indexOf(p.getTo());
             if (from >= 0 && to >= 0) {
-                graph.addEdge(from, to, p.weight); // p.weight is double
+                graph.addEdge(from, to, p.getWeight()); // p.weight is double
             }
         });
 
