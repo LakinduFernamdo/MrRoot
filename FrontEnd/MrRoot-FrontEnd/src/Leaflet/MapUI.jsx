@@ -176,7 +176,7 @@ const sendShortestPathRequest = async () => {
 
   try {
     const response = await axios.post(
-      "http://localhost:8080/api/distance/graph?start=" + startNode,
+      "http://localhost:8080/api/v1/distance/graph?start=" + startNode,
       payload,
       {
         headers: {
@@ -187,6 +187,7 @@ const sendShortestPathRequest = async () => {
     );
 
     console.log("Shortest path from API:", response.data.shortest);
+    alert("success !")
     setDistanceResults(response.data.shortest);
 
   } catch (err) {

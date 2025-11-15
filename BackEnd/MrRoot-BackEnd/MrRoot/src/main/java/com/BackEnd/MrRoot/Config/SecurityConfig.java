@@ -15,17 +15,24 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.disable()) // Disable Spring Security CORS so WebMvc CORS takes effect
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()   // Before sending POST, the browser sends:
                         .requestMatchers(HttpMethod.POST, "/api/v1/distance/graph").permitAll()
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
 
         return http.build();
     }
 }
+//IF you don’t disable security CORS, the WebMvc CORS config won’t apply → preflight fails.
+
 
 
 
