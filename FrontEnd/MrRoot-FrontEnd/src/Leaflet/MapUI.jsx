@@ -1,4 +1,13 @@
-import { MapContainer, Marker, Popup, TileLayer, useMapEvents, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  useMapEvents,
+  useMap,
+  Polyline
+} from "react-leaflet";
+
 import { useState } from "react";
 import MapAttribute from "./Mapattributes";
 import "./Map.css";
@@ -10,6 +19,9 @@ import { harversineDistance } from "../Utils/distance";
 import { reverseGeocode } from "../Utils/geocode";
 import axios from "axios";
 
+
+
+// Add Marker on Click
 
 function AddMarkerOnClick({ placing, setPlacing, setMarkers }) {
   useMapEvents({
@@ -35,6 +47,9 @@ function AddMarkerOnClick({ placing, setPlacing, setMarkers }) {
   return null;
 }
 
+
+// Fly to user location
+
 function FlyToLocation({ position }) {
   const map = useMap();
   if (position) {
@@ -43,17 +58,20 @@ function FlyToLocation({ position }) {
   return null;
 }
 
+
+
+// MAIN COMPONENT
+
 function MapUI() {
   const [center] = useState([6.9271, 79.8612]);
-
   const zoomLevel = 9;
   const location = useGeolocate();
 
   const [placing, setPlacing] = useState(false);
   const [markers, setMarkers] = useState([]);
 
-  //  store ALL results here
   const [distanceResults, setDistanceResults] = useState([]);
+  const [shortestPath, setShortestPath] = useState(null); // used for polylines
 
   const markerIcon = new L.Icon({
     iconUrl: markerImg,
@@ -66,7 +84,10 @@ function MapUI() {
     setMarkers((prev) => prev.filter((m) => m.id !== id));
   };
 
-  //  Distances *from me* shown in UI now
+
+
+  // Distances FROM Me
+
   const calculateDistanceFromMe = () => {
     if (!location.loaded || location.error) return;
 
@@ -81,10 +102,12 @@ function MapUI() {
       distance_km: harversineDistance(myPos, m.position).toFixed(2),
     }));
 
-    setDistanceResults(results); //  update UI
+    setDistanceResults(results);
   };
 
-  //  pairwise unique (A→B only)
+ 
+  // Marker → Marker distances (unique)
+ 
   const calculateMarkerToMarkerDistance = () => {
     const results = [];
 
@@ -101,7 +124,9 @@ function MapUI() {
     setDistanceResults(results);
   };
 
-  //  All full combinations (A→B, B→A, etc.)
+  // --------------------------------------------
+  // All combinations A→B and B→A
+  // --------------------------------------------
   const calculateAllPairDistancesForEach = () => {
     const results = [];
 
@@ -121,98 +146,120 @@ function MapUI() {
   };
 
 
-  //send shortest path to BackEnd through API
-const sendShortestPathRequest = async () => {
-  if (!location.loaded || location.error) {
-    alert("Location not available ! Turn on your location");
-    return;
-  }
+  // ------------------------------------------------------------
+  // Send shortest path request to backend
+  // ------------------------------------------------------------
+  const sendShortestPathRequest = async () => {
+    if (!location.loaded || location.error) {
+      alert("Location not available ! Turn on your location");
+      return;
+    }
 
-  const startNode = "You";
+    const startNode = "You";
 
-  // Build node list
-  const nodes = ["You", ...markers.map(m => m.name)];
+    const nodes = ["You", ...markers.map(m => m.name)];
 
-  // Build pairwise distances
-  const distances = [];
+    const distances = [];
 
-  // From me → markers
-  markers.forEach(m => {
-    distances.push({
-      from: "You",
-      to: m.name,
-      weight: parseFloat(
-        harversineDistance(
-          { lat: location.coordinates.lat, lng: location.coordinates.lng },
-          m.position
-        ).toFixed(2)
-      ),
+    // You → Markers
+    markers.forEach(m => {
+      distances.push({
+        from: "You",
+        to: m.name,
+        weight: parseFloat(
+          harversineDistance(
+            { lat: location.coordinates.lat, lng: location.coordinates.lng },
+            m.position
+          ).toFixed(2)
+        ),
+      });
     });
-  });
 
-  // Marker ↔ marker (bi-directional)
-  for (let i = 0; i < markers.length; i++) {
-    for (let j = i + 1; j < markers.length; j++) {
-      const dist = parseFloat(
-        harversineDistance(markers[i].position, markers[j].position).toFixed(2)
+    // Marker ↔ Marker
+    for (let i = 0; i < markers.length; i++) {
+      for (let j = i + 1; j < markers.length; j++) {
+        const dist = parseFloat(
+          harversineDistance(markers[i].position, markers[j].position).toFixed(2)
+        );
+
+        distances.push({ from: markers[i].name, to: markers[j].name, weight: dist });
+        distances.push({ from: markers[j].name, to: markers[i].name, weight: dist });
+      }
+    }
+
+    const payload = { nodes, distances };
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/api/v1/distance/graph?start=" + startNode,
+        payload,
+        {
+          headers: { "Content-Type": "application/json" }
+        }
       );
 
-      distances.push({
-        from: markers[i].name,
-        to: markers[j].name,
-        weight: dist,
-      });
+      setDistanceResults(response.data.shortest);
+      setShortestPath(response.data.shortest); // save to draw polylines
 
-      distances.push({
-        from: markers[j].name,
-        to: markers[i].name,
-        weight: dist,
-      });
+      alert("Success!");
+
+    } catch (err) {
+      alert("Backend error: " + err);
     }
-  }
-
-  // Payload matches backend DTO!
-  const payload = { nodes, distances };
-
-  try {
-    const response = await axios.post(
-      "http://localhost:8080/api/v1/distance/graph?start=" + startNode,
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: false,
-      }
-    );
-
-    console.log("Shortest path from API:", response.data.shortest);
-    alert("success !")
-    setDistanceResults(response.data.shortest);
-
-  } catch (err) {
-    alert(err);
-  }
-};
+  };
 
 
+ 
+  // Build Polyline path based on backend shortest path result
+  
+  const buildPolylinePoints = () => {
+    if (!shortestPath || !location.loaded) return [];
+
+    let points = [];
+
+    const userPoint = {
+      lat: location.coordinates.lat,
+      lng: location.coordinates.lng
+    };
+
+    // sort nodes by distance (except You)
+    const sorted = Object.entries(shortestPath)
+      .filter(([name]) => name !== "You")
+      .sort((a, b) => a[1] - b[1]);
+
+    points.push([userPoint.lat, userPoint.lng]);
+
+    sorted.forEach(([name]) => {
+      const m = markers.find(mm => mm.name === name);
+      if (m) points.push([m.position.lat, m.position.lng]);
+    });
+
+    return points;
+  };
+
+
+  const polylinePoints = buildPolylinePoints();
 
 
 
+  // RENDER
 
   return (
     <div className="map-wrapper">
+
+      {/* MAP */}
       <MapContainer
+        className="my-map-container"
         center={center}
         zoom={zoomLevel}
         scrollWheelZoom={true}
-        style={{ height: "100vh", width: "100%" }}
       >
         <TileLayer
           url={MapAttribute.maptiler.url}
           attribution={MapAttribute.maptiler.attribution}
         />
 
+        {/* USER LOCATION */}
         {location.loaded && !location.error && (
           <>
             <Marker
@@ -231,6 +278,7 @@ const sendShortestPathRequest = async () => {
           </>
         )}
 
+        {/* MARKERS */}
         {markers.map((m) => (
           <Marker
             key={m.id}
@@ -262,22 +310,33 @@ const sendShortestPathRequest = async () => {
         ))}
 
         <AddMarkerOnClick placing={placing} setPlacing={setPlacing} setMarkers={setMarkers} />
+
+        {/* DRAW POLYLINE */}
+        {polylinePoints.length > 1 && (
+          <Polyline positions={polylinePoints} color="red" weight={4} />
+        )}
       </MapContainer>
 
+
+      {/* BUTTONS */}
       <div style={{ marginTop: "10px" }}>
         <button onClick={() => setPlacing(true)}>Add Marker</button>
         <button onClick={calculateDistanceFromMe}>Distances From Me</button>
         <button onClick={calculateMarkerToMarkerDistance}>Marker Distances</button>
         <button onClick={calculateAllPairDistancesForEach}>All Pairs</button>
-        <button onClick={sendShortestPathRequest} >Give shortest path</button>
+        <button onClick={sendShortestPathRequest}>Give shortest path</button>
       </div>
 
-      {/*  Unified output area */}
+
+      {/* OUTPUT */}
       <div className="distance-output">
         <h3>Distance Results</h3>
 
-        {distanceResults.length === 0 && <p>No distances calculated</p>}
+        {distanceResults.length === 0 && typeof distanceResults !== "object" && (
+          <p>No distances calculated</p>
+        )}
 
+        {/* Backend shortest path mode */}
         {typeof distanceResults === "object" && !Array.isArray(distanceResults) ? (
           <ul>
             {Object.entries(distanceResults).map(([node, dist]) => (
@@ -293,8 +352,8 @@ const sendShortestPathRequest = async () => {
             ))}
           </ul>
         )}
-
       </div>
+
     </div>
   );
 }
