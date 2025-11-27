@@ -1,15 +1,27 @@
-/* Map.css */
-
 .leaflet-container {
-  margin-top: 30px;
+  margin-top: 10px;
   height: 500px;
-  width: 300vh;
-  margin-left: 25px;
-  margin-right: 25px;
-  align-content: center;
+  width: 100%;
 }
 
 .map-wrapper {
   position: relative;
-  
+}
+
+.map-buttons {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  display: flex;
+  gap: 10px;
+}
+
+.map-buttons button {
+  background: #0077ff;
+  padding: 8px 14px;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }

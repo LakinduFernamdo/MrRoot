@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
 import './Leaflet/Map.css';
-import MapUI from './Leaflet/MapUI';
+import MapUI from './Components/MapUI';
+import BusMap from "./BusMap"
 
 function App() {
 

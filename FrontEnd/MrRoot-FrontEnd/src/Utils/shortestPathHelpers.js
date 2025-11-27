@@ -1,18 +1,25 @@
+// src/Utils/shortestPathHelpers.js
+// Converts ordered node-name array to coordinates list
+// orderedNodes: e.g. ["You", "A", "B", "You"]
+// markers: array of marker objects [{ id, name, position: {lat,lng} }, ...]
+// userPos: { lat, lng }
 
+export function convertNodesToCoordinates(orderedNodes = [], markers = [], userPos) {
+  const coords = [];
+  const lookup = {};
+  markers.forEach(m => {
+    lookup[m.name] = m.position;
+  });
 
-export function buildOrderedNodeList(shortest) {
-  return ["You", ...shortest.map((p) => p.to)];
-}
-
-export function convertNodesToCoordinates(orderedNodes, markers, userLocation) {
-  return orderedNodes.map((name) => {
-    if (name === "You") {
-      return [userLocation.lat, userLocation.lng];
+  for (const node of orderedNodes) {
+    if (node === "You") {
+      coords.push([userPos.lat, userPos.lng]);
+    } else if (lookup[node]) {
+      coords.push([lookup[node].lat, lookup[node].lng]);
+    } else {
+      // fallback: ignore unknown nodes
+      console.warn("Unknown node name in orderedNodes:", node);
     }
-
-    const marker = markers.find((m) => m.name === name);
-    if (!marker) return null;
-
-    return [marker.position.lat, marker.position.lng];
-  }).filter(Boolean);
+  }
+  return coords;
 }
