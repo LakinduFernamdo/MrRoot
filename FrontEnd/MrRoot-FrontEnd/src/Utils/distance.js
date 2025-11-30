@@ -1,6 +1,10 @@
 // src/Utils/distance.js
 export function harversineDistance(a, b) {
   // a and b: { lat, lng }
+  if (!a || !b || a.lat == null || a.lng == null || b.lat == null || b.lng == null) {
+    return 0;
+  }
+
   const toRad = deg => (deg * Math.PI) / 180;
   const R = 6371; // km
   const dLat = toRad(b.lat - a.lat);

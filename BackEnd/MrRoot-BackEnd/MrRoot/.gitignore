@@ -38,5 +38,7 @@ HELP.md
 src/test
 .gitattributes
 target
-
-
+../.idea
+.gitignore
+.mvn/wrapper
+mvnw.cmd
