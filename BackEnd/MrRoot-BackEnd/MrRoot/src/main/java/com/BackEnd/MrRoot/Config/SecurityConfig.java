@@ -18,19 +18,24 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable()) // Disable Spring Security CORS so WebMvc CORS takes effect
+                .cors(cors -> cors.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()   // Before sending POST, the browser sends:
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Before sending POST, the browser sends:
                         .requestMatchers(HttpMethod.POST, "/api/v1/distance/graph").permitAll()
                         .anyRequest().authenticated()
                 )
+                .oauth2Login(
+                        oauth2 -> oauth2
+                                .defaultSuccessUrl("http://localhost:5173/map", true)
+                ) // OAuth2 login works
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 );
 
         return http.build();
     }
 }
+
 //IF you don’t disable security CORS, the WebMvc CORS config won’t apply → preflight fails.
 
 

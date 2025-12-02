@@ -1,14 +1,18 @@
-import { useState } from 'react';
-
-import './Leaflet/Map.css';
-import MapUI from './Components/MapUI';
-import LoginPage from './Components/LoginPage';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import LoginPage from "./Components/LoginPage";
+import MapUI from "./Components/MapUI";
 
 function App() {
   return (
-    <>
-      <LoginPage />
-    </>
+    <Router>
+      <Routes>
+        {/* Default login page */}
+        <Route path="/" element={<LoginPage />} />
+
+        {/* Map route after Google login */}
+        <Route path="/map" element={<MapUI />} />
+      </Routes>
+    </Router>
   );
 }
 

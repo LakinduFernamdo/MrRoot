@@ -42,3 +42,4 @@ target
 .gitignore
 .mvn/wrapper
 mvnw.cmd
+.env

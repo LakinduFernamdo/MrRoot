@@ -3,7 +3,7 @@ import "../Leaflet/Loginpage.css";
 export default function LoginPage() {
 
     const connectToGoogleServer=()=>{
-       window.location.href="http://localhost:8080/auth/google";
+       window.location.href = "http://localhost:8080/oauth2/authorization/google";
     }
 
   return (
