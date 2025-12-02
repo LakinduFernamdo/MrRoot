@@ -2,14 +2,12 @@ import { useState } from 'react';
 
 import './Leaflet/Map.css';
 import MapUI from './Components/MapUI';
-import BusMap from "./BusMap"
+import LoginPage from './Components/LoginPage';
 
 function App() {
-
-
   return (
     <>
-      <MapUI />
+      <LoginPage />
     </>
   );
 }
