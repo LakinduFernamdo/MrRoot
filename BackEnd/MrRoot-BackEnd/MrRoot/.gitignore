@@ -43,3 +43,6 @@ target
 .mvn/wrapper
 mvnw.cmd
 .env
+../.idea
+
+
