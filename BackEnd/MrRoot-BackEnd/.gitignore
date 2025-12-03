@@ -3,3 +3,6 @@ MrRoot/.gitattributes
 MrRoot/.gitignore
 MrRoot/src/test
 MrRoot/.mvn
+MrRoot/.env
+MrRoot/mvnw.cmd
+./.idea
