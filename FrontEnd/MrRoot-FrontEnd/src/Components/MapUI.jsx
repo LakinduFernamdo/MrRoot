@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import axios from "axios";
+import RealRoute from "./RealRoute";
 
 import AddMarkerOnClick from "./AddMarkerOnClick";
 import FlyToLocation from "./FlyToLocation";
@@ -125,7 +126,7 @@ export default function MapUI() {
 
       // 5) Fit map to drawn path if possible: use only valid coords
       const validLatLngs = coords.filter(c => c && c.lat != null && c.lng != null)
-                                 .map(c => [c.lat, c.lng]);
+        .map(c => [c.lat, c.lng]);
       if (mapRef.current && validLatLngs.length > 0) {
         try {
           mapRef.current.fitBounds(validLatLngs, { padding: [40, 40] });
@@ -229,6 +230,26 @@ export default function MapUI() {
         {pathCoords && pathCoords.length > 0 && (
           <ShortestPath coords={pathCoords} />
         )}
+
+        {/* Real road routes between hops */}
+        {pathCoords &&
+          pathCoords.length > 1 &&
+          pathCoords.map((point, i) => {
+            if (i === pathCoords.length - 1) return null;
+
+            const from = pathCoords[i];
+            const to = pathCoords[i + 1];
+
+            if (!from || !to) return null;
+
+            return (
+              <RealRoute
+                key={`real-${i}`}
+                from={from}
+                to={to}
+              />
+            );
+          })}
       </MapContainer>
 
       {/* ---------------- SHORT PATH INFO ---------------- */}
