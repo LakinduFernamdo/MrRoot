@@ -1,9 +1,9 @@
 package com.BackEnd.MrRoot.Dto;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 public class DistanceResponse {
-
 
     private Map<String, Double> shortest;
 
