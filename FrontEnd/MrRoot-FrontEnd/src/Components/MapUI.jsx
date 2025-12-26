@@ -65,12 +65,20 @@ export default function MapUI() {
       }
 
       const payload = { nodes, distances };
+      const token = new URLSearchParams(window.location.search).get("token");
+      if (token) localStorage.setItem("jwt", token);
 
       const res = await axios.post(
         `http://localhost:8080/api/v1/distance/graph?start=${startNode}`,
         payload,
-        { headers: { "Content-Type": "application/json" } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          }
+        }
       );
+
 
       const shortest = res.data && res.data.shortest;
       if (!shortest) {
@@ -137,7 +145,7 @@ export default function MapUI() {
 
     } catch (err) {
       console.error("Compute shortest error:", err);
-      alert("Failed to compute shortest path. Check console.");
+      alert("Failed to compute shortest path. Check console." + err);
       // reset safe state
       setPathCoords([]);
       setShortestPathNodes([]);
@@ -161,6 +169,7 @@ export default function MapUI() {
         >
           {loading ? "Computing..." : "Send to Backend / Draw Route"}
         </button>
+        <button>History</button>
       </div>
 
       {/* Leaflet Map */}
