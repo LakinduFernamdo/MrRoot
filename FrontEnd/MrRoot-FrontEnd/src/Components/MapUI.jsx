@@ -12,6 +12,8 @@ import ShortestPath from "./ShortestPath";
 import useGeolocate from "../hooks/useGeolocate";
 import { harversineDistance } from "../Utils/distance";
 import { extractOrderedNodes, convertNodesToCoordinates } from "../Utils/shortestPathHelpers";
+import HistoryTable from "./HistoryComponent.jsx"
+import "../Leaflet/popup.css";
 
 export default function MapUI() {
   const [markers, setMarkers] = useState([]);
@@ -22,6 +24,10 @@ export default function MapUI() {
   const [totalDistance, setTotalDistance] = useState(0);
   const [travelTime, setTravelTime] = useState({ walk: 0, drive: 0 });
   const [loading, setLoading] = useState(false);
+
+  const [showPopup, setShowPopup] = useState(false);  //show popup Table
+  const [historyData, setHistoryData] = useState([]); //render history data 
+
 
   const location = useGeolocate();
   const mapRef = useRef(null);
@@ -157,8 +163,39 @@ export default function MapUI() {
     }
   };
 
+
+  // fetch history
+  const fetchHistory = async () => {
+  try {
+    let token = localStorage.getItem("token");
+
+    if (!token) {
+      token = new URLSearchParams(window.location.search).get("token");
+      if (token) localStorage.setItem("token", token);
+    }
+
+    const response = await axios.get(
+      "http://localhost:8080/api/v1/history",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    setHistoryData(Array.isArray(response.data) ? response.data : []);
+    setShowPopup(true);
+
+  } catch (error) {
+    console.error("Error fetching history:", error);
+    alert("Error fetching history");
+  }
+};
+
+
   return (
     <div className="map-wrapper">
+
       {/* Buttons */}
       <div className="map-buttons" style={{ marginBottom: 8 }}>
         <button onClick={handleAddMarker}>Add Marker</button>
@@ -169,7 +206,23 @@ export default function MapUI() {
         >
           {loading ? "Computing..." : "Send to Backend / Draw Route"}
         </button>
-        <button>History</button>
+
+        <button onClick={fetchHistory}>Show History</button>
+
+        
+
+{showPopup && (
+  <HistoryTable
+    historyData={historyData}
+    onClose={() => setShowPopup(false)}
+  />
+)}
+
+
+        
+
+
+
       </div>
 
       {/* Leaflet Map */}
