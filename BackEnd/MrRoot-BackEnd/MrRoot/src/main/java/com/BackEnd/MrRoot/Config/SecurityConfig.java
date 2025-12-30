@@ -31,6 +31,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Before sending POST, the browser sends:
                         .requestMatchers(HttpMethod.POST, "/api/v1/distance/graph").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/v1/history").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth -> oauth.successHandler(oAuth2SuccessHandler))
