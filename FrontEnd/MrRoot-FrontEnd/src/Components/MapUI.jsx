@@ -72,7 +72,7 @@ export default function MapUI() {
 
       const payload = { nodes, distances };
       const token = new URLSearchParams(window.location.search).get("token");
-      if (token) localStorage.setItem("jwt", token);
+      if (token) localStorage.setItem("jwt", token); //if token exist save it on browser jwt=token
 
       const res = await axios.post(
         `http://localhost:8080/api/v1/distance/graph?start=${startNode}`,
@@ -167,11 +167,11 @@ export default function MapUI() {
   // fetch history
   const fetchHistory = async () => {
   try {
-    let token = localStorage.getItem("token");
+    let token = localStorage.getItem("jwt");//get from broser storage(jwt=token setItem)
 
     if (!token) {
-      token = new URLSearchParams(window.location.search).get("token");
-      if (token) localStorage.setItem("token", token);
+      token = new URLSearchParams(window.location.search).get("token");//otherwise get from URL
+      if (token) localStorage.setItem("token", token);//save it
     }
 
     const response = await axios.get(
@@ -188,7 +188,7 @@ export default function MapUI() {
 
   } catch (error) {
     console.error("Error fetching history:", error);
-    alert("Error fetching history");
+    alert("Error fetching history"+error);
   }
 };
 
